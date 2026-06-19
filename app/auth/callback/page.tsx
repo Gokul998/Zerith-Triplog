@@ -1,6 +1,7 @@
 "use client";
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { setAuth } from "@/lib/api";
 
 function AuthCallbackInner() {
   const router = useRouter();
@@ -11,8 +12,8 @@ function AuthCallbackInner() {
     const user = params.get("user");
     if (token && user) {
       try {
-        localStorage.setItem("tl_token", token);
-        localStorage.setItem("tl_user", decodeURIComponent(user));
+        const userData = JSON.parse(decodeURIComponent(user));
+        setAuth(token, userData);
         router.replace("/dashboard");
       } catch {
         router.replace("/");
