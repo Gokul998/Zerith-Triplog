@@ -16,13 +16,9 @@ function AuthCallbackInner() {
         // Write directly to localStorage then verify before redirecting
         localStorage.setItem("tl_token", token);
         localStorage.setItem("tl_user", JSON.stringify(userData));
-        // Verify it was saved
-        const saved = localStorage.getItem("tl_token");
-        if (saved === token) {
-          window.location.href = "/dashboard";
-        } else {
-          router.replace("/");
-        }
+        // Notify AuthContext (same tab — storage event doesn't fire for same tab)
+        window.dispatchEvent(new Event("auth-updated"));
+        router.push("/dashboard");
       } catch {
         router.replace("/");
       }

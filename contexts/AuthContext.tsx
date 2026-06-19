@@ -17,6 +17,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u);
     if (u) connectSocket();
     setLoading(false);
+
+    // Re-read auth when the callback page writes to localStorage in the same tab
+    const onStorage = () => {
+      const fresh = getUser();
+      setUser(fresh);
+      if (fresh) connectSocket();
+    };
+    window.addEventListener("auth-updated", onStorage);
+    return () => window.removeEventListener("auth-updated", onStorage);
   }, []);
 
   async function login(email: string, password: string) {
