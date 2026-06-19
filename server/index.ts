@@ -167,6 +167,12 @@ io.on("connection", (socket) => {
   });
 });
 
+// Global error handler — catches any async error passed to next(err)
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error("Unhandled route error:", err?.message || err);
+  if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
+});
+
 const PORT = process.env.PORT || process.env.BACKEND_PORT || 3001;
 runMigrations()
   .then(() => httpServer.listen(PORT, () => console.log(`Backend running on :${PORT}`)))

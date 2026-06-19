@@ -25,13 +25,17 @@ export function verifyToken(token: string): { userId: string } | null {
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
-  const payload = verifyToken(auth.slice(7));
-  if (!payload) return res.status(401).json({ error: "Invalid token" });
-  const { queryOne } = await import("./db/mysql");
-  const user = await queryOne("SELECT id FROM users WHERE id = ?", [payload.userId]);
-  if (!user) return res.status(401).json({ error: "User not found" });
-  (req as any).userId = payload.userId;
-  next();
+  try {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
+    const payload = verifyToken(auth.slice(7));
+    if (!payload) return res.status(401).json({ error: "Invalid token" });
+    const { queryOne } = await import("./db/mysql");
+    const user = await queryOne("SELECT id FROM users WHERE id = ?", [payload.userId]);
+    if (!user) return res.status(401).json({ error: "User not found" });
+    (req as any).userId = payload.userId;
+    next();
+  } catch (err) {
+    next(err);
+  }
 }
