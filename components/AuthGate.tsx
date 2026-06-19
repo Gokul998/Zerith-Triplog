@@ -4,6 +4,7 @@ import { Plane, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { toast } from "@/components/ui/Toaster";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, loading, login, register } = useAuth();
@@ -22,8 +23,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     setError("");
     setSubmitting(true);
     try {
-      if (mode === "login") await login(form.email, form.password);
-      else await register(form.name, form.email, form.password);
+      if (mode === "login") {
+        await login(form.email, form.password);
+        toast("Welcome back! ✈️", "success");
+      } else {
+        await register(form.name, form.email, form.password);
+        toast(`Welcome to TripLog, ${form.name.split(" ")[0]}! 🎉`, "success");
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

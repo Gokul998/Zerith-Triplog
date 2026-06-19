@@ -60,7 +60,9 @@ router.get("/callback", async (req, res) => {
     const { email, name } = googleUser;
 
     let user = await queryOne<any>("SELECT * FROM users WHERE email = ?", [email]);
+    let isNew = false;
     if (!user) {
+      isNew = true;
       const id = crypto.randomUUID();
       const colors = ["#6366f1","#8b5cf6","#ec4899","#f43f5e","#f97316","#10b981","#3b82f6","#14b8a6"];
       const color = colors[Math.floor(Math.random() * colors.length)];
@@ -74,7 +76,7 @@ router.get("/callback", async (req, res) => {
       id: user.id, name: user.name, email: user.email, avatar_color: user.avatar_color,
     }));
 
-    res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&user=${userData}`);
+    res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&user=${userData}${isNew ? "&new=1" : ""}`);
   } catch (err: any) {
     console.error("Google OAuth error:", err.message);
     res.redirect(`${FRONTEND_URL}?auth_error=google_failed`);

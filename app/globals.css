@@ -159,3 +159,20 @@ input[type="text"], input[type="email"], input[type="password"], input[type="dat
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+/* Toast progress bar shrink */
+@keyframes shrink {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+.animate-shrink { animation: shrink 4s linear forwards; }
+
+/* Toast slide-in */
+@keyframes slide-in-from-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-in { animation-fill-mode: both; }
+.slide-in-from-right-4 { animation-name: slide-in-from-right; }
+.fade-in { animation-name: slide-in-from-right; }
+.duration-300 { animation-duration: 300ms; }
