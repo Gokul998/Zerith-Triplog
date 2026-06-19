@@ -3,6 +3,11 @@ import path from "path";
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
+// Prevent unhandled async errors from crashing the server
+process.on("unhandledRejection", (err: any) => {
+  console.error("Unhandled rejection:", err?.message || err);
+});
+
 import { runMigrations } from "./db/migrate";
 import express from "express";
 import { createServer } from "http";
