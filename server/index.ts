@@ -9,7 +9,7 @@ import { createServer } from "http";
 import { Server as SocketServer } from "socket.io";
 import cors from "cors";
 import crypto from "crypto";
-import db from "./db";
+import { query, queryOne, execute } from "./db/mysql";
 import { verifyToken } from "./auth";
 import { sendPushToUser, setNotifIo } from "./routes/notifications";
 
@@ -50,11 +50,11 @@ app.use("/api/auth/google", googleAuthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/trips", tripRoutes);
 // Top-level invite lookup (no tripId needed — token contains trip reference)
-app.get("/api/trips/x/members/invite/:token", (req, res) => {
-  const invite = db.prepare("SELECT * FROM invites WHERE token = ? AND status = 'pending'").get(req.params.token) as any;
+app.get("/api/trips/x/members/invite/:token", async (req, res) => {
+  const invite = await queryOne("SELECT * FROM invites WHERE token = ? AND status = 'pending'", [req.params.token]) as any;
   if (!invite) return res.status(404).json({ error: "Invite not found or expired" });
   if (new Date(invite.expires_at) < new Date()) return res.status(410).json({ error: "Invite expired" });
-  const trip = db.prepare("SELECT id, title, destination, start_date, end_date FROM trips WHERE id = ?").get(invite.trip_id);
+  const trip = await queryOne("SELECT id, title, destination, start_date, end_date FROM trips WHERE id = ?", [invite.trip_id]);
   res.json({ invite, trip });
 });
 app.use("/api/trips/:tripId/members", memberRoutes);
@@ -127,25 +127,25 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send-message", async (data: { tripId: string; content: string; type?: string }) => {
-    const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as any;
+    const user = await queryOne("SELECT * FROM users WHERE id = ?", [userId]) as any;
     if (!user) return;
     const id = crypto.randomUUID();
-    db.prepare("INSERT INTO messages (id, trip_id, user_id, content, type) VALUES (?, ?, ?, ?, ?)").run(id, data.tripId, userId, data.content, data.type || "text");
+    await execute("INSERT INTO messages (id, trip_id, user_id, content, type) VALUES (?, ?, ?, ?, ?)", [id, data.tripId, userId, data.content, data.type || "text"]);
     const message = { id, trip_id: data.tripId, user_id: userId, user_name: user.name, avatar_color: user.avatar_color, content: data.content, type: data.type || "text", created_at: new Date().toISOString() };
     io.to(`trip:${data.tripId}`).emit("new-message", message);
 
     // Notify other members
-    const members = db.prepare(`
+    const members = await query(`
       SELECT tm.user_id FROM trip_members tm WHERE tm.trip_id = ? AND tm.user_id != ?
       UNION SELECT owner_id as user_id FROM trips WHERE id = ? AND owner_id != ?
-    `).all(data.tripId, userId, data.tripId, userId) as any[];
+    `, [data.tripId, userId, data.tripId, userId]) as any[];
     for (const m of members) {
       await sendPushToUser(m.user_id, `${user.name} in trip chat`, data.content.slice(0, 80), data.tripId);
     }
   });
 
-  socket.on("typing", (data: { tripId: string; isTyping: boolean }) => {
-    const user = db.prepare("SELECT name FROM users WHERE id = ?").get(userId) as any;
+  socket.on("typing", async (data: { tripId: string; isTyping: boolean }) => {
+    const user = await queryOne("SELECT name FROM users WHERE id = ?", [userId]) as any;
     socket.to(`trip:${data.tripId}`).emit("user-typing", { userId, userName: user?.name, isTyping: data.isTyping });
   });
 
