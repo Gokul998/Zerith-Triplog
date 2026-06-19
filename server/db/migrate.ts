@@ -181,6 +181,9 @@ const PATCHES = [
   `ALTER TABLE activities ADD COLUMN end_time VARCHAR(10) NULL AFTER start_time`,
   `ALTER TABLE activities ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'planned' AFTER end_time`,
   `ALTER TABLE activities ADD COLUMN currency VARCHAR(10) NOT NULL DEFAULT 'USD' AFTER cost`,
+  // expenses: add paid_by and split_among (migration used user_id instead)
+  `ALTER TABLE expenses ADD COLUMN paid_by VARCHAR(36) NOT NULL DEFAULT '' AFTER trip_id`,
+  `ALTER TABLE expenses ADD COLUMN split_among TEXT NOT NULL DEFAULT '[]' AFTER notes`,
 ];
 
 export async function runMigrations() {
