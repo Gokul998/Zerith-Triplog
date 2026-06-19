@@ -183,7 +183,8 @@ const PATCHES = [
   `ALTER TABLE activities ADD COLUMN currency VARCHAR(10) NOT NULL DEFAULT 'USD' AFTER cost`,
   // expenses: add paid_by and split_among (migration used user_id instead)
   `ALTER TABLE expenses ADD COLUMN paid_by VARCHAR(36) NOT NULL DEFAULT '' AFTER trip_id`,
-  `ALTER TABLE expenses ADD COLUMN split_among TEXT NOT NULL DEFAULT '[]' AFTER notes`,
+  `ALTER TABLE expenses ADD COLUMN split_among TEXT NOT NULL AFTER notes`,
+  `UPDATE expenses SET split_among = '[]' WHERE split_among IS NULL OR split_among = ''`,
 ];
 
 export async function runMigrations() {

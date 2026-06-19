@@ -51,12 +51,12 @@ function MagazineHero({ trip, allTrips, onClick }: { trip: Trip; allTrips: Trip[
   ];
 
   return (
-    <div className="grid grid-cols-5 gap-3 mb-2">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-2">
       {/* Left: Magazine full-bleed hero */}
       <motion.div
         initial={{ opacity: 0, x: -24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}
         onClick={onClick}
-        className="col-span-3 relative rounded-2xl overflow-hidden cursor-pointer group"
+        className="md:col-span-3 relative rounded-2xl overflow-hidden cursor-pointer group"
         style={{ minHeight: 260 }}
       >
         <img
@@ -91,7 +91,7 @@ function MagazineHero({ trip, allTrips, onClick }: { trip: Trip; allTrips: Trip[
       </motion.div>
 
       {/* Right: 2×2 Bento stat tiles */}
-      <div className="col-span-2 grid grid-cols-2 gap-3">
+      <div className="md:col-span-2 grid grid-cols-2 gap-3">
         {stats.map((s, i) => (
           <motion.div
             key={s.label}
@@ -128,13 +128,10 @@ function BentoTripTile({ trip, large, index }: { trip: Trip; large?: boolean; in
     <motion.div
       initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.07, duration: 0.4 }}
-      style={{
-        gridColumn: large ? "span 2" : "span 1",
-        perspective: 900,
-      }}
+      className={`cursor-pointer ${large ? "sm:col-span-2" : ""}`}
+      style={{ perspective: 900 }}
       onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}
       onClick={() => router.push(`/trips/${trip.id}`)}
-      className="cursor-pointer"
     >
       <div style={{ transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`, transition: "transform 0.15s ease", transformStyle: "preserve-3d" }}>
       {large ? (
@@ -340,8 +337,8 @@ function Dashboard() {
               <span className="text-sm text-white/60 hidden sm:block">{user?.name?.split(" ")[0]}</span>
             </div>
             <button onClick={logout} className="p-2 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition-colors"><LogOut size={16} /></button>
-            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm hover:from-indigo-400 hover:to-purple-500 transition-all shadow-lg shadow-indigo-500/30">
-              <Plus size={16} /> New Trip
+            <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm hover:from-indigo-400 hover:to-purple-500 transition-all shadow-lg shadow-indigo-500/30">
+              <Plus size={16} /> <span className="hidden sm:inline">New Trip</span>
             </button>
           </div>
         </div>
@@ -350,14 +347,14 @@ function Dashboard() {
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
         <div>
           <p className="text-white/30 text-sm flex items-center gap-1.5 mb-1"><Sparkles size={13} />Welcome back, {user?.name?.split(" ")[0]}</p>
-          <h1 className="text-4xl font-black gradient-text leading-tight">Your Journeys</h1>
+          <h1 className="text-3xl sm:text-4xl font-black gradient-text leading-tight">Your Journeys</h1>
         </div>
 
         {loading ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-5 gap-3" style={{ minHeight: 260 }}>
-              <div className="col-span-3 bg-white/5 rounded-2xl animate-pulse border border-white/10" />
-              <div className="col-span-2 grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3" style={{ minHeight: 260 }}>
+              <div className="md:col-span-3 bg-white/5 rounded-2xl animate-pulse border border-white/10" />
+              <div className="md:col-span-2 grid grid-cols-2 gap-3">
                 {[...Array(4)].map((_, i) => <div key={i} className="rounded-2xl bg-white/5 animate-pulse border border-white/10" />)}
               </div>
             </div>
@@ -389,7 +386,7 @@ function Dashboard() {
                     <Plus size={13} /> New
                   </button>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {myTrips.map((t, i) => (
                     <BentoTripTile key={t.id} trip={t} large={i === 0 && myTrips.length > 1} index={i} />
                   ))}
@@ -403,7 +400,7 @@ function Dashboard() {
                   <h2 className="text-lg font-bold text-white">Invited Trips</h2>
                   <p className="text-white/30 text-xs mt-0.5">Shared with you</p>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {invitedTrips.map((t, i) => <BentoTripTile key={t.id} trip={t} index={i} />)}
                 </div>
               </section>

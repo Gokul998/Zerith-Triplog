@@ -24,7 +24,7 @@ export default function TripLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen mesh-bg">
       <header className="bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/10 sticky top-0 z-20">
-        <div className="max-w-screen-xl mx-auto px-6 py-3 flex items-center gap-3">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
           <Link href="/dashboard" className="p-2 rounded-xl hover:bg-white/10 text-white/60 hover:text-white transition-colors"><ArrowLeft size={18} /></Link>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-1.5 rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.3)] shrink-0"><Plane size={14} /></div>
@@ -37,11 +37,11 @@ export default function TripLayout({ children }: { children: React.ReactNode }) 
             <NotificationBell />
           </div>
         </div>
-        <div className="max-w-screen-xl mx-auto px-6 pb-2">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 pb-2">
           <TripNav tripId={tripId} />
         </div>
       </header>
-      <main className="max-w-screen-xl mx-auto px-6 py-6">
+      <main className="max-w-screen-xl mx-auto px-4 sm:px-6 py-6">
         {children}
       </main>
       <TripChat tripId={tripId} />
