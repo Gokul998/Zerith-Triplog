@@ -42,11 +42,9 @@ router.post("/invite", requireAuth, wrap(async (req, res) => {
   );
 
   const appUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-  sendInviteEmail(email, trip.title, inviter.name, token, appUrl).catch(err =>
-    console.error("Invite email failed:", err)
-  );
+  const emailSent = await sendInviteEmail(email, trip.title, inviter.name, token, appUrl);
 
-  res.json({ ok: true, emailSent: true, inviteUrl: `${appUrl}/invite/${token}` });
+  res.json({ ok: true, emailSent, inviteUrl: `${appUrl}/invite/${token}` });
 }));
 
 router.get("/invite/:token", wrap(async (req, res) => {
