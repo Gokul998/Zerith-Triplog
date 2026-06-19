@@ -24,14 +24,13 @@ export function verifyToken(token: string): { userId: string } | null {
   }
 }
 
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer ")) return res.status(401).json({ error: "Unauthorized" });
   const payload = verifyToken(auth.slice(7));
   if (!payload) return res.status(401).json({ error: "Invalid token" });
-  // Verify user still exists in DB
-  const db = require("./db").default;
-  const user = db.prepare("SELECT id FROM users WHERE id = ?").get(payload.userId);
+  const { queryOne } = await import("./db/mysql");
+  const user = await queryOne("SELECT id FROM users WHERE id = ?", [payload.userId]);
   if (!user) return res.status(401).json({ error: "User not found" });
   (req as any).userId = payload.userId;
   next();
