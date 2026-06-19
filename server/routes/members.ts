@@ -37,10 +37,13 @@ router.post("/invite", requireAuth, async (req, res) => {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
   await execute("INSERT INTO invites (id, trip_id, email, token, expires_at) VALUES (?, ?, ?, ?, ?)", [crypto.randomUUID(), req.params.tripId, email, token, expiresAt]);
 
-  const appUrl = process.env.APP_URL || "http://localhost:3000";
-  const sent = await sendInviteEmail(email, trip.title, inviter.name, token, appUrl);
+  const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || "http://localhost:3000";
+  // Fire email without blocking the response
+  sendInviteEmail(email, trip.title, inviter.name, token, appUrl).catch(err =>
+    console.error("Invite email failed:", err)
+  );
 
-  res.json({ ok: true, emailSent: sent, inviteUrl: `${appUrl}/invite/${token}` });
+  res.json({ ok: true, emailSent: true, inviteUrl: `${appUrl}/invite/${token}` });
 });
 
 router.get("/invite/:token", async (req, res) => {
