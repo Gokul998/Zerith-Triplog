@@ -14,7 +14,9 @@ function normTrip(trip: any): { id: string; startDate: string; endDate: string }
 }
 
 function buildDays(tripId: string, startDate: string, endDate: string, activities: any[]): ItineraryDay[] {
-  const dateRange = eachDayOfInterval({ start: parseISO(startDate), end: parseISO(endDate) });
+  // Ensure start <= end regardless of how the trip was saved
+  const [s, e] = startDate <= endDate ? [startDate, endDate] : [endDate, startDate];
+  const dateRange = eachDayOfInterval({ start: parseISO(s), end: parseISO(e) });
   return dateRange.map((date, i) => {
     const dateStr = format(date, "yyyy-MM-dd");
     const dayActivities = activities
