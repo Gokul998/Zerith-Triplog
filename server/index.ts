@@ -161,7 +161,7 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = process.env.BACKEND_PORT || 3001;
+const PORT = process.env.PORT || process.env.BACKEND_PORT || 3001;
 httpServer.listen(PORT, () => console.log(`Backend running on :${PORT}`));
 
 export { io };
