@@ -43,6 +43,7 @@ const io = new SocketServer(httpServer, { cors: { origin: "*" } });
 app.use(cors());
 app.use(express.json());
 app.use("/api/uploads", express.static(path.join(process.cwd(), ".data", "uploads")));
+app.get("/api/health", (_, res) => res.json({ status: "ok", ts: Date.now() }));
 
 app.use("/api/auth/google", googleAuthRoutes);
 app.use("/api/auth", authRoutes);
