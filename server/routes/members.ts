@@ -35,7 +35,7 @@ router.post("/invite", requireAuth, async (req, res) => {
 
   const token = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  await execute("INSERT INTO invites (id, trip_id, email, token, expires_at) VALUES (?, ?, ?, ?, ?)", [crypto.randomUUID(), req.params.tripId, email, token, expiresAt]);
+  await execute("INSERT INTO invites (id, trip_id, invited_by, email, token, expires_at) VALUES (?, ?, ?, ?, ?, ?)", [crypto.randomUUID(), req.params.tripId, userId, email, token, expiresAt]);
 
   const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || "http://localhost:3000";
   // Fire email without blocking the response
