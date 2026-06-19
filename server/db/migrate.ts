@@ -121,12 +121,15 @@ CREATE TABLE IF NOT EXISTS expenses (
 CREATE TABLE IF NOT EXISTS checklist_items (
   id         VARCHAR(36)  PRIMARY KEY,
   trip_id    VARCHAR(36)  NOT NULL,
-  label      VARCHAR(255) NOT NULL,
+  text       VARCHAR(255) NOT NULL,
   category   VARCHAR(50)  NOT NULL DEFAULT 'general',
   checked    TINYINT(1)   NOT NULL DEFAULT 0,
+  checked_by VARCHAR(36)  NULL,
+  created_by VARCHAR(36)  NOT NULL,
   sort_order INT          NOT NULL DEFAULT 0,
   created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE CASCADE,
+  FOREIGN KEY (trip_id)    REFERENCES trips(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_trip (trip_id)
 );
 
@@ -166,13 +169,34 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 );
 `;
 
+// ALTER statements to patch existing tables that were created with wrong columns
+const PATCHES = [
+  // checklist_items: rename label→text, add created_by, checked_by
+  `ALTER TABLE checklist_items CHANGE COLUMN label text VARCHAR(255) NOT NULL`,
+  `ALTER TABLE checklist_items ADD COLUMN created_by VARCHAR(36) NOT NULL DEFAULT '' AFTER checked`,
+  `ALTER TABLE checklist_items ADD COLUMN checked_by VARCHAR(36) NULL AFTER created_by`,
+  // invites: add expires_at if missing
+  `ALTER TABLE invites ADD COLUMN expires_at DATETIME NOT NULL DEFAULT (NOW() + INTERVAL 7 DAY)`,
+  // activities: add end_time, status, currency if missing
+  `ALTER TABLE activities ADD COLUMN end_time VARCHAR(10) NULL AFTER start_time`,
+  `ALTER TABLE activities ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'planned' AFTER end_time`,
+  `ALTER TABLE activities ADD COLUMN currency VARCHAR(10) NOT NULL DEFAULT 'USD' AFTER cost`,
+];
+
 export async function runMigrations() {
   const conn = await pool.getConnection();
   try {
-    // Split on semicolons, run each statement individually
     const statements = SCHEMA.split(";").map(s => s.trim()).filter(s => s.length > 0);
     for (const sql of statements) {
       await conn.execute(sql);
+    }
+    // Apply patches — ignore duplicate column errors (already patched)
+    for (const sql of PATCHES) {
+      try {
+        await conn.execute(sql);
+      } catch (e: any) {
+        if (e.code !== "ER_DUP_FIELDNAME" && e.code !== "ER_BAD_FIELD_ERROR") throw e;
+      }
     }
     console.log("Database migrations complete");
   } finally {
