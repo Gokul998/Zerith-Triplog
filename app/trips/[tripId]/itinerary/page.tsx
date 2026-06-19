@@ -92,14 +92,15 @@ export default function ItineraryPage() {
   const { tripId } = useParams<{ tripId: string }>();
   const [trip, setTrip] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     apiGet<any>(`/api/trips/${tripId}`)
       .then(t => { setTrip(t); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch((e: any) => { setError(e.message || "Unknown error"); setLoading(false); });
   }, [tripId]);
 
   if (loading) return <Skeleton />;
-  if (!trip) return <p className="text-white/40 text-center py-10">Trip not found</p>;
+  if (!trip) return <p className="text-white/40 text-center py-10">Trip not found — {error}</p>;
   return <ItineraryContent trip={trip} />;
 }
