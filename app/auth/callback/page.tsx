@@ -13,8 +13,16 @@ function AuthCallbackInner() {
     if (token && user) {
       try {
         const userData = JSON.parse(decodeURIComponent(user));
-        setAuth(token, userData);
-        router.replace("/dashboard");
+        // Write directly to localStorage then verify before redirecting
+        localStorage.setItem("tl_token", token);
+        localStorage.setItem("tl_user", JSON.stringify(userData));
+        // Verify it was saved
+        const saved = localStorage.getItem("tl_token");
+        if (saved === token) {
+          window.location.href = "/dashboard";
+        } else {
+          router.replace("/");
+        }
       } catch {
         router.replace("/");
       }
