@@ -90,7 +90,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
         {/* Google SSO */}
         <a
-          href="http://localhost:3001/api/auth/google"
+          href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/auth/google`}
           className="flex items-center justify-center gap-3 w-full py-3 rounded-xl bg-white text-gray-800 font-semibold text-sm hover:bg-gray-100 transition-all shadow-sm"
         >
           <svg width="18" height="18" viewBox="0 0 48 48">
