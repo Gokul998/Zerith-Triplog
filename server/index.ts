@@ -3,6 +3,7 @@ import path from "path";
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
+import { runMigrations } from "./db/migrate";
 import express from "express";
 import { createServer } from "http";
 import { Server as SocketServer } from "socket.io";
@@ -162,6 +163,8 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || process.env.BACKEND_PORT || 3001;
-httpServer.listen(PORT, () => console.log(`Backend running on :${PORT}`));
+runMigrations()
+  .then(() => httpServer.listen(PORT, () => console.log(`Backend running on :${PORT}`)))
+  .catch(err => { console.error("Migration failed:", err); process.exit(1); });
 
 export { io };
