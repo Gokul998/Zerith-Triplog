@@ -9,9 +9,17 @@ const PROMPT = `Extract expense info from this receipt image. Return ONLY valid 
 
 function parseReceiptJson(text: string) {
   const cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error("No JSON in response");
-  const r = JSON.parse(match[0]);
+  // Extract the first complete JSON object by finding balanced braces
+  const start = cleaned.indexOf("{");
+  if (start === -1) throw new Error("No JSON in response");
+  let depth = 0;
+  let end = -1;
+  for (let i = start; i < cleaned.length; i++) {
+    if (cleaned[i] === "{") depth++;
+    else if (cleaned[i] === "}") { depth--; if (depth === 0) { end = i; break; } }
+  }
+  if (end === -1) throw new Error("Malformed JSON in response");
+  const r = JSON.parse(cleaned.slice(start, end + 1));
   return {
     title: r.title || "Receipt",
     amount: typeof r.amount === "number" ? r.amount : parseFloat(r.amount) || 0,
