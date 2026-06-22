@@ -73,7 +73,7 @@ router.delete("/invites/:inviteId", requireAuth, wrap(async (req, res) => {
   const userId = (req as any).userId;
   const trip = await queryOne("SELECT * FROM trips WHERE id = ?", [req.params.tripId]) as any;
   if (!trip || trip.owner_id !== userId) return res.status(403).json({ error: "Forbidden" });
-  await execute("UPDATE invites SET status = 'revoked' WHERE id = ? AND trip_id = ?", [req.params.inviteId, req.params.tripId]);
+  await execute("DELETE FROM invites WHERE id = ? AND trip_id = ?", [req.params.inviteId, req.params.tripId]);
   res.json({ ok: true });
 }));
 
