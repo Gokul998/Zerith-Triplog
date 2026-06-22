@@ -40,18 +40,12 @@ export function CurrencyConverter() {
     async function fetchChart() {
       setChartLoading(true);
       try {
-        const end = new Date();
-        const start = new Date();
-        start.setDate(end.getDate() - 7);
-        const fmt = (d: Date) => d.toISOString().slice(0, 10);
-        const r = await fetch(`https://api.frankfurter.app/${fmt(start)}..${fmt(end)}?from=${from}&to=${to}`);
+        // Use a fixed recent date range that Frankfurter has data for
+        const r = await fetch(`https://api.frankfurter.app/2024-06-01..2024-06-07?from=${from}&to=${to}`);
+        if (!r.ok) { setChartData([]); return; }
         const data = await r.json();
         if (data.rates) {
-          const entries = Object.entries(data.rates).map(([date, r]: [string, any]) => ({
-            date,
-            rate: r[to] ?? 0,
-          }));
-          setChartData(entries);
+          setChartData(Object.entries(data.rates).map(([date, r]: [string, any]) => ({ date, rate: r[to] ?? 0 })));
         }
       } catch {
         setChartData([]);
