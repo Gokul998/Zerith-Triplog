@@ -1,17 +1,20 @@
 import { Router } from "express";
-import db from "../db";
+import { queryOne, query } from "../db/mysql";
 import { requireAuth } from "../auth";
 import { callGeminiJSON } from "../gemini";
 
 const router = Router({ mergeParams: true });
 
-router.post("/generate", requireAuth, async (req, res) => {
+router.post("/generate", requireAuth, async (req, res, next) => {
   const { tripId } = req.params;
   try {
-    const trip = db.prepare("SELECT * FROM trips WHERE id = ?").get(tripId) as any;
+    const trip = await queryOne("SELECT * FROM trips WHERE id = ?", [tripId]) as any;
     if (!trip) return res.status(404).json({ error: "Trip not found" });
 
-    const activities = db.prepare("SELECT * FROM activities WHERE trip_id = ? ORDER BY day_id, sort_order").all(tripId) as any[];
+    const activities = await query(
+      "SELECT * FROM activities WHERE trip_id = ? ORDER BY day_id, sort_order",
+      [tripId]
+    ) as any[];
     const activityList = activities.length > 0
       ? activities.map(a => `- ${a.title} (${a.category}) at ${a.location || "TBD"}`).join("\n")
       : "No activities added yet";
@@ -24,8 +27,7 @@ Make it realistic, well-paced, and consider local culture and travel times.`;
     const plan = await callGeminiJSON(prompt);
     res.json({ plan, destination: trip.destination });
   } catch (err) {
-    console.error("Planner generate error:", err);
-    res.status(500).json({ error: "Failed to generate plan" });
+    next(err);
   }
 });
 

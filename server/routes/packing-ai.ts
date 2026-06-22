@@ -1,19 +1,17 @@
 import { Router } from "express";
-import db from "../db";
+import { queryOne } from "../db/mysql";
 import { callGeminiJSON } from "../gemini";
-import { verifyToken } from "../auth";
+import { requireAuth } from "../auth";
 
 const router = Router({ mergeParams: true });
 
-router.post("/suggest", async (req, res) => {
-  const token = req.headers.authorization?.replace("Bearer ", "");
-  if (!token || !verifyToken(token)) return res.status(401).json({ error: "Unauthorized" });
+router.post("/suggest", requireAuth, async (req, res, next) => {
+  try {
+    const { tripId } = req.params as { tripId: string };
+    const trip = await queryOne("SELECT * FROM trips WHERE id = ?", [tripId]) as any;
+    if (!trip) return res.status(404).json({ error: "Trip not found" });
 
-  const { tripId } = req.params as { tripId: string };
-  const trip = db.prepare("SELECT * FROM trips WHERE id = ?").get(tripId) as any;
-  if (!trip) return res.status(404).json({ error: "Trip not found" });
-
-  const prompt = `You are a travel packing expert. Generate a comprehensive packing list for this trip:
+    const prompt = `You are a travel packing expert. Generate a comprehensive packing list for this trip:
 Destination: ${trip.destination}
 Start date: ${trip.start_date}
 End date: ${trip.end_date}
@@ -27,11 +25,10 @@ Return ONLY valid JSON in this exact format, no markdown:
   { "category": "clothing", "items": ["T-shirts", "Underwear"] }
 ]`;
 
-  try {
     const suggestions = await callGeminiJSON<{ category: string; items: string[] }[]>(prompt);
     res.json({ suggestions });
   } catch (e: any) {
-    res.status(500).json({ error: e.message || "AI error" });
+    next(e);
   }
 });
 
