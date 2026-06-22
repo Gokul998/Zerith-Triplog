@@ -29,7 +29,7 @@ router.post("/", requireAuth, async (req, res, next) => {
       ? memories.map(m => `- ${m.date}: ${m.title}${m.note ? ` — ${m.note}` : ""}${m.mood ? ` (mood: ${m.mood})` : ""}`).join("\n")
       : "No memories recorded.";
 
-    const prompt = `You are a travel writer. Write a beautiful, vivid, engaging trip story/summary paragraph (2-4 paragraphs) for this journey. Make it personal, evocative, and highlight the best moments. Do NOT use markdown, just flowing prose.
+    const prompt = `You are a travel writer and cultural historian. Generate a rich travel document with TWO clearly separated sections.
 
 Trip: ${trip.title}
 Destination: ${trip.destination}
@@ -42,7 +42,22 @@ ${actText}
 Memories captured:
 ${memText}
 
-Write the trip story now:`;
+---
+
+Section 1 — TRIP STORY
+Write 2-4 paragraphs of beautiful, vivid, personal travel narrative about this journey. Make it evocative and highlight the best moments. Plain prose, no bullet points.
+
+Section 2 — DESTINATION GUIDE: ${trip.destination}
+Write detailed information covering ALL of the following, each as a short paragraph:
+- Ancient History & Origins: founding, early civilisations, key historical events
+- Cultural Heritage: traditions, festivals, art forms, architecture, UNESCO sites or notable monuments
+- People & Society: ethnic groups, languages, local customs, hospitality culture, way of life
+- Religion & Spirituality: dominant faiths, sacred sites, rituals
+- Food & Cuisine: signature dishes, street food, culinary traditions
+- Best Time & Travel Tips: seasons, what to wear, local etiquette, hidden gems
+
+Separate the two sections with the exact line: ---DESTINATION GUIDE---
+Do not use markdown headers or bullet points, only flowing paragraphs with bold labels like "Ancient History:" at the start of each paragraph.`;
 
     const summary = await callGemini(prompt);
     res.json({ summary });
