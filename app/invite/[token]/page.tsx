@@ -110,11 +110,18 @@ export default function InvitePage() {
             </p>
             <form onSubmit={submitAuth} className="space-y-3">
               {authMode === "register" && (
-                <Input label="Full name" id="inv-name" value={form.name} onChange={e => set("name", e.target.value)} required placeholder="Your name" />
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-600">Full name</label>
+                  <input className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" value={form.name} onChange={e => set("name", e.target.value)} required placeholder="Your name" />
+                </div>
               )}
-              <Input label="Email" id="inv-email" type="email" value={form.email} onChange={e => set("email", e.target.value)} required placeholder="you@example.com" />
-              <div className="relative">
-                <Input label="Password" id="inv-pass" type={showPass ? "text" : "password"} value={form.password} onChange={e => set("password", e.target.value)} required />
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Email</label>
+                <input type="email" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" value={form.email} onChange={e => set("email", e.target.value)} required placeholder="you@example.com" />
+              </div>
+              <div className="relative flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-600">Password</label>
+                <input type={showPass ? "text" : "password"} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 pr-10" value={form.password} onChange={e => set("password", e.target.value)} required placeholder="••••••••" />
                 <button type="button" onClick={() => setShowPass(s => !s)} className="absolute right-3 top-8 text-gray-400">{showPass ? <EyeOff size={16} /> : <Eye size={16} />}</button>
               </div>
               {authError && <p className="text-sm text-red-600">{authError}</p>}
