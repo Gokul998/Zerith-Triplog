@@ -13,7 +13,6 @@ import { ReceiptScanner } from "@/components/ReceiptScanner";
 import { formatCurrency } from "@/lib/utils";
 
 const CATEGORIES = ["accommodation","transport","food","activities","shopping","health","communication","other"];
-const CURRENCIES = ["USD","EUR","GBP","JPY","INR","AUD","CAD","SGD","THB","MXN","AED","CHF","HKD","SEK","NOK","DKK","NZD","ZAR","BRL","KRW"];
 const catColors: Record<string, string> = { accommodation:"bg-purple-100 text-purple-700", transport:"bg-blue-100 text-blue-700", food:"bg-orange-100 text-orange-700", activities:"bg-green-100 text-green-700", shopping:"bg-pink-100 text-pink-700", health:"bg-red-100 text-red-700", communication:"bg-yellow-100 text-yellow-700", other:"bg-gray-100 text-gray-600" };
 
 export default function BudgetPage() {
@@ -23,7 +22,9 @@ export default function BudgetPage() {
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [budgetInput, setBudgetInput] = useState("");
-  const [expForm, setExpForm] = useState({ title: "", amount: "", category: "food", date: new Date().toISOString().slice(0, 10), notes: "", currency: "USD" });
+  const [allMembers, setAllMembers] = useState<{ id: string; name: string; avatar_color: string }[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [expForm, setExpForm] = useState({ title: "", amount: "", category: "food", date: new Date().toISOString().slice(0, 10), notes: "", currency: "USD", paid_by: "", split_among: [] as string[] });
   const setE = (k: string, v: string) => setExpForm(p => ({ ...p, [k]: v }));
   const [loading, setLoading] = useState(true);
   const [aiInsights, setAiInsights] = useState<string | null>(null);
@@ -47,18 +48,70 @@ export default function BudgetPage() {
     const [t, e] = await Promise.all([apiGet<any>(`/api/trips/${tripId}`), apiGet<any[]>(`/api/trips/${tripId}/expenses`)]);
     setTrip(t);
     setExpenses(e);
-    setExpForm(p => ({ ...p, currency: t.currency ?? "USD" }));
+
+    // Build full member list: owner + trip_members
+    const members: { id: string; name: string; avatar_color: string }[] = [];
+    if (t.owner) members.push({ id: t.owner.id, name: t.owner.name, avatar_color: t.owner.avatar_color });
+    if (Array.isArray(t.members)) {
+      for (const m of t.members) {
+        if (!members.find(x => x.id === m.id)) members.push({ id: m.id, name: m.name, avatar_color: m.avatar_color });
+      }
+    }
+    setAllMembers(members);
+
+    // Detect current user from localStorage
+    try {
+      const raw = localStorage.getItem("tl_user");
+      const uid = raw ? JSON.parse(raw)?.id ?? "" : "";
+      setCurrentUserId(uid);
+      setExpForm(p => ({
+        ...p,
+        currency: t.currency ?? "USD",
+        paid_by: uid,
+        split_among: members.map(m => m.id),
+      }));
+    } catch {
+      setExpForm(p => ({
+        ...p,
+        currency: t.currency ?? "USD",
+        split_among: members.map(m => m.id),
+      }));
+    }
+
     setLoading(false);
   }, [tripId]);
 
   useEffect(() => { load(); }, [load]);
 
+  function toggleSplitMember(id: string) {
+    setExpForm(p => {
+      const already = p.split_among.includes(id);
+      return { ...p, split_among: already ? p.split_among.filter(x => x !== id) : [...p.split_among, id] };
+    });
+  }
+
+  function openAddExpense() {
+    setExpForm(p => ({
+      ...p,
+      title: "",
+      amount: "",
+      notes: "",
+      paid_by: currentUserId || (allMembers[0]?.id ?? ""),
+      split_among: allMembers.map(m => m.id),
+    }));
+    setShowExpenseForm(true);
+  }
+
   async function addExpense(e: React.FormEvent) {
     e.preventDefault();
-    await apiPost(`/api/trips/${tripId}/expenses`, { ...expForm, amount: parseFloat(expForm.amount), currency });
+    await apiPost(`/api/trips/${tripId}/expenses`, {
+      ...expForm,
+      amount: parseFloat(expForm.amount),
+      currency,
+      split_among: expForm.split_among,
+    });
     load();
     setShowExpenseForm(false);
-    setExpForm(p => ({ ...p, title: "", amount: "", notes: "" }));
   }
 
   async function deleteExpense(id: string) {
@@ -91,7 +144,7 @@ export default function BudgetPage() {
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={getInsights}><Sparkles size={14} />AI</Button>
           <Button variant="secondary" size="sm" onClick={() => { setBudgetInput(trip?.budget_amount ?? ""); setShowBudgetModal(true); }}><Settings size={14} />{trip?.budget_amount ? "Edit" : "Set"}</Button>
-          <Button size="sm" onClick={() => setShowExpenseForm(true)}><Plus size={14} />Add</Button>
+          <Button size="sm" onClick={openAddExpense}><Plus size={14} />Add</Button>
           <ExpenseExport expenses={expenses} trip={trip} />
         </div>
       </div>
@@ -145,7 +198,7 @@ export default function BudgetPage() {
         </div>
       )}
 
-      <ReceiptScanner tripId={tripId} currency={currency} onAdded={load} />
+      <ReceiptScanner tripId={tripId} currency={currency} members={allMembers} currentUserId={currentUserId} onAdded={load} />
       <ExpenseSplitter tripId={tripId} currency={currency} />
 
       <div className="bg-[#1e293b] rounded-2xl overflow-hidden border border-white/10">
@@ -156,12 +209,12 @@ export default function BudgetPage() {
           <div className="divide-y divide-white/5">
             {expenses.map(e => (
               <div key={e.id} className="flex items-center gap-3 px-4 py-3 group hover:bg-white/5 transition-colors">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: e.paid_by_color }}>{e.paid_by_name?.[0]}</div>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: e.paid_by_color ?? "#6366f1" }}>{(e.paid_by_name ?? "?")[0]}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white truncate">{e.title}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className={`text-xs px-1.5 py-0.5 rounded-full ${catColors[e.category] ?? "bg-gray-500/20 text-gray-400"}`}>{e.category}</span>
-                    <span className="text-xs text-white/40">{e.paid_by_name} · {new Date(e.date).toLocaleDateString()}</span>
+                    <span className="text-xs text-white/40">{e.paid_by_name ?? "Unknown"} · {new Date(e.date).toLocaleDateString()}</span>
                   </div>
                 </div>
                 <p className="font-semibold text-white shrink-0">{formatCurrency(e.amount, e.currency)}</p>
@@ -187,6 +240,40 @@ export default function BudgetPage() {
           </div>
           <Input label="Date" id="ex-date" type="date" value={expForm.date} onChange={e => setE("date", e.target.value)} />
           <Input label="Notes" id="ex-notes" value={expForm.notes} onChange={e => setE("notes", e.target.value)} placeholder="Optional note" />
+
+          {allMembers.length > 0 && (
+            <>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-white/60">Paid by</label>
+                <select
+                  className="rounded-xl bg-white/5 border border-white/10 px-3 py-3 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  value={expForm.paid_by}
+                  onChange={e => setE("paid_by", e.target.value)}
+                >
+                  {allMembers.map(m => <option key={m.id} value={m.id} className="bg-[#1e293b]">{m.name}{m.id === currentUserId ? " (you)" : ""}</option>)}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-white/60">Split among</label>
+                <div className="rounded-xl bg-white/5 border border-white/10 p-3 space-y-2">
+                  {allMembers.map(m => (
+                    <label key={m.id} className="flex items-center gap-2.5 cursor-pointer group">
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${expForm.split_among.includes(m.id) ? "bg-indigo-500 border-indigo-500" : "border-white/20 bg-transparent"}`} onClick={() => toggleSplitMember(m.id)}>
+                        {expForm.split_among.includes(m.id) && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      </div>
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: m.avatar_color ?? "#6366f1" }}>{m.name[0]}</div>
+                      <span className="text-sm text-white/80">{m.name}{m.id === currentUserId ? " (you)" : ""}</span>
+                    </label>
+                  ))}
+                </div>
+                {expForm.split_among.length > 0 && (
+                  <p className="text-xs text-white/30">Each person owes {formatCurrency(parseFloat(expForm.amount || "0") / expForm.split_among.length, currency)}</p>
+                )}
+              </div>
+            </>
+          )}
+
           <div className="flex gap-3 pt-1">
             <Button type="button" variant="secondary" className="flex-1" onClick={() => setShowExpenseForm(false)}>Cancel</Button>
             <Button type="submit" className="flex-1">Add</Button>

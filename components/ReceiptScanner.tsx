@@ -17,19 +17,29 @@ interface ExtractedData {
   merchant: string;
 }
 
+interface Member {
+  id: string;
+  name: string;
+  avatar_color: string;
+}
+
 interface Props {
   tripId: string;
   currency: string;
+  members?: Member[];
+  currentUserId?: string;
   onAdded: () => void;
 }
 
-export function ReceiptScanner({ tripId, currency, onAdded }: Props) {
+export function ReceiptScanner({ tripId, currency, members = [], currentUserId = "", onAdded }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [scanning, setScanning] = useState(false);
   const [data, setData] = useState<ExtractedData | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paidBy, setPaidBy] = useState<string>("");
+  const [splitAmong, setSplitAmong] = useState<string[]>([]);
 
   async function handleFile(file: File) {
     setError(null);
@@ -55,6 +65,8 @@ export function ReceiptScanner({ tripId, currency, onAdded }: Props) {
 
       const extracted: ExtractedData = await res.json();
       setData({ ...extracted, currency: extracted.currency || currency });
+      setPaidBy(currentUserId || members[0]?.id || "");
+      setSplitAmong(members.map(m => m.id));
     } catch (e: any) {
       setError(e.message || "Failed to scan receipt");
     } finally {
@@ -80,6 +92,8 @@ export function ReceiptScanner({ tripId, currency, onAdded }: Props) {
           category: data.category || "other",
           date: data.date || new Date().toISOString().slice(0, 10),
           notes: data.merchant ? `Merchant: ${data.merchant}` : "",
+          paid_by: paidBy || undefined,
+          split_among: splitAmong.length > 0 ? splitAmong : undefined,
         }),
       });
       if (!res.ok) throw new Error("Failed to add expense");
@@ -97,6 +111,8 @@ export function ReceiptScanner({ tripId, currency, onAdded }: Props) {
     setData(null);
     setPreview(null);
     setError(null);
+    setPaidBy("");
+    setSplitAmong([]);
   }
 
   return (
@@ -211,6 +227,38 @@ export function ReceiptScanner({ tripId, currency, onAdded }: Props) {
                 onChange={e => setData(d => d ? { ...d, date: e.target.value } : d)}
               />
             </div>
+
+            {members.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-white/50">Paid by</label>
+                  <select
+                    className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    value={paidBy}
+                    onChange={e => setPaidBy(e.target.value)}
+                  >
+                    {members.map(m => <option key={m.id} value={m.id} className="bg-gray-900">{m.name}{m.id === currentUserId ? " (you)" : ""}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-white/50">Split among</label>
+                  <div className="rounded-xl bg-white/5 border border-white/10 p-2.5 space-y-1.5">
+                    {members.map(m => (
+                      <label key={m.id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={splitAmong.includes(m.id)}
+                          onChange={() => setSplitAmong(prev => prev.includes(m.id) ? prev.filter(x => x !== m.id) : [...prev, m.id])}
+                          className="accent-indigo-500 w-3.5 h-3.5"
+                        />
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: m.avatar_color ?? "#6366f1" }}>{m.name[0]}</div>
+                        <span className="text-xs text-white/80">{m.name}{m.id === currentUserId ? " (you)" : ""}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-3 pt-1">
               <Button variant="secondary" size="sm" className="flex-1" onClick={reset}>Cancel</Button>
