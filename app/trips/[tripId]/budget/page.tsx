@@ -55,7 +55,7 @@ export default function BudgetPage() {
 
   async function addExpense(e: React.FormEvent) {
     e.preventDefault();
-    await apiPost(`/api/trips/${tripId}/expenses`, { ...expForm, amount: parseFloat(expForm.amount) });
+    await apiPost(`/api/trips/${tripId}/expenses`, { ...expForm, amount: parseFloat(expForm.amount), currency });
     load();
     setShowExpenseForm(false);
     setExpForm(p => ({ ...p, title: "", amount: "", notes: "" }));
@@ -75,7 +75,7 @@ export default function BudgetPage() {
 
   if (loading) return <div className="animate-pulse space-y-4"><div className="h-32 bg-white/5 rounded-2xl border border-white/10" /><div className="h-48 bg-white/5 rounded-2xl border border-white/10" /></div>;
 
-  const totalSpent = expenses.reduce((s, e) => s + e.amount, 0);
+  const totalSpent = expenses.filter(e => e.currency === currency || !e.currency).reduce((s, e) => s + Number(e.amount), 0);
   const remaining = (trip?.budget_amount ?? 0) - totalSpent;
   const currency = trip?.currency ?? "USD";
   const pct = trip?.budget_amount ? Math.min(100, (totalSpent / trip.budget_amount) * 100) : 0;
@@ -177,12 +177,9 @@ export default function BudgetPage() {
       <Modal open={showExpenseForm} onClose={() => setShowExpenseForm(false)} title="Add Expense">
         <form onSubmit={addExpense} className="space-y-3">
           <Input label="Description" id="ex-title" value={expForm.title} onChange={e => setE("title", e.target.value)} required placeholder="Hotel check-in" />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Amount" id="ex-amount" type="number" step="0.01" value={expForm.amount} onChange={e => setE("amount", e.target.value)} required />
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-white/60">Currency</label>
-              <select className="rounded-xl bg-white/5 border border-white/10 px-3 py-3 text-sm text-white focus:border-indigo-500 focus:outline-none" value={expForm.currency} onChange={e => setE("currency", e.target.value)}>{CURRENCIES.map(c => <option key={c} className="bg-[#1e293b]">{c}</option>)}</select>
-            </div>
+          <div className="flex gap-2 items-end">
+            <div className="flex-1"><Input label="Amount" id="ex-amount" type="number" step="0.01" value={expForm.amount} onChange={e => setE("amount", e.target.value)} required /></div>
+            <div className="px-3 py-3 rounded-xl bg-white/5 border border-white/10 text-sm text-white/60 font-medium mb-[1px]">{currency}</div>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-white/60">Category</label>

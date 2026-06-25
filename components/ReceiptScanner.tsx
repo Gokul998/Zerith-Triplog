@@ -76,7 +76,7 @@ export function ReceiptScanner({ tripId, currency, onAdded }: Props) {
         body: JSON.stringify({
           title: data.title || data.merchant || "Receipt",
           amount: data.amount,
-          currency: data.currency,
+          currency: currency,
           category: data.category || "other",
           date: data.date || new Date().toISOString().slice(0, 10),
           notes: data.merchant ? `Merchant: ${data.merchant}` : "",
@@ -188,12 +188,7 @@ export function ReceiptScanner({ tripId, currency, onAdded }: Props) {
               />
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-white/60">Currency</label>
-                <input
-                  className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
-                  value={data.currency}
-                  maxLength={3}
-                  onChange={e => setData(d => d ? { ...d, currency: e.target.value.toUpperCase() } : d)}
-                />
+                <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white/60 font-medium">{currency}</div>
               </div>
             </div>
 
