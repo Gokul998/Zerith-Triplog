@@ -75,9 +75,9 @@ export default function BudgetPage() {
 
   if (loading) return <div className="animate-pulse space-y-4"><div className="h-32 bg-white/5 rounded-2xl border border-white/10" /><div className="h-48 bg-white/5 rounded-2xl border border-white/10" /></div>;
 
+  const currency = trip?.currency ?? "USD";
   const totalSpent = expenses.filter(e => e.currency === currency || !e.currency).reduce((s, e) => s + Number(e.amount), 0);
   const remaining = (trip?.budget_amount ?? 0) - totalSpent;
-  const currency = trip?.currency ?? "USD";
   const pct = trip?.budget_amount ? Math.min(100, (totalSpent / trip.budget_amount) * 100) : 0;
 
   return (
