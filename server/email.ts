@@ -42,20 +42,6 @@ export async function sendInviteEmail(to: string, tripTitle: string, inviterName
   }
 }
 
-export async function sendSmsViaEmail(phone: string, carrier: string, message: string) {
-  const gateways: Record<string, string> = {
-    att: "txt.att.net", tmobile: "tmomail.net", verizon: "vtext.com",
-    sprint: "messaging.sprintpcs.com", boost: "sms.myboostmobile.com",
-    cricket: "sms.cricketwireless.net", metro: "mymetropcs.com",
-    airtel: "airtelap.com", jio: "jionet.co.in",
-  };
-  const gateway = gateways[carrier.toLowerCase()];
-  if (!gateway) return false;
-  const to = `${phone.replace(/\D/g, "")}@${gateway}`;
-  try {
-    await getTransporter().sendMail({ from: process.env.SMTP_FROM || "noreply@triplog.app", to, subject: "", text: message });
-    return true;
-  } catch {
-    return false;
-  }
+export async function sendSmsViaEmail(_phone: string, _carrier: string, _message: string) {
+  return false; // SMS via email gateway not supported with Brevo HTTP API
 }
