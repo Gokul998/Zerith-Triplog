@@ -22,11 +22,12 @@ router.get("/", requireAuth, wrap(async (req, res) => {
 
 router.post("/", requireAuth, wrap(async (req, res) => {
   const userId = (req as any).userId;
-  const { title, amount, currency = "USD", category = "other", split_among = [], date, notes = "" } = req.body;
+  const { title, amount, currency = "USD", category = "other", split_among = [], date, notes = "", paid_by } = req.body;
+  const paidBy = paid_by || userId;
   const id = crypto.randomUUID();
   await execute(
     "INSERT INTO expenses (id, trip_id, paid_by, user_id, title, amount, currency, category, split_among, date, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    [id, req.params.tripId, userId, userId, title, amount, currency, category, JSON.stringify(split_among), date, notes]
+    [id, req.params.tripId, paidBy, userId, title, amount, currency, category, JSON.stringify(split_among), date, notes]
   );
   const expense = await queryOne(
     `SELECT e.*, COALESCE(u.name, 'Unknown') as paid_by_name, COALESCE(u.avatar_color, '#6366f1') as paid_by_color

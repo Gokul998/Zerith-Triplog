@@ -27,6 +27,7 @@ export default function BudgetPage() {
   const [expForm, setExpForm] = useState({ title: "", amount: "", category: "food", date: new Date().toISOString().slice(0, 10), notes: "", currency: "USD", paid_by: "", split_among: [] as string[] });
   const setE = (k: string, v: string) => setExpForm(p => ({ ...p, [k]: v }));
   const [loading, setLoading] = useState(true);
+  const [splitRefreshKey, setSplitRefreshKey] = useState(0);
   const [aiInsights, setAiInsights] = useState<string | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [showInsights, setShowInsights] = useState(false);
@@ -79,6 +80,7 @@ export default function BudgetPage() {
     }
 
     setLoading(false);
+    setSplitRefreshKey(k => k + 1);
   }, [tripId]);
 
   useEffect(() => { load(); }, [load]);
@@ -199,7 +201,7 @@ export default function BudgetPage() {
       )}
 
       <ReceiptScanner tripId={tripId} currency={currency} members={allMembers} currentUserId={currentUserId} onAdded={load} />
-      <ExpenseSplitter tripId={tripId} currency={currency} />
+      <ExpenseSplitter tripId={tripId} currency={currency} refreshKey={splitRefreshKey} />
 
       <div className="bg-[#1e293b] rounded-2xl overflow-hidden border border-white/10">
         <h3 className="font-semibold text-white px-4 py-3 border-b border-white/10">Expenses ({expenses.length})</h3>
