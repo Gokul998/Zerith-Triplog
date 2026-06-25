@@ -31,8 +31,9 @@ export async function sendInviteEmail(to: string, tripTitle: string, inviterName
       `,
     });
     return true;
-  } catch (err) {
-    console.error("Email send failed:", err);
+  } catch (err: any) {
+    console.error("Email send failed:", err?.message || err);
+    console.error("SMTP config — host:", process.env.SMTP_HOST, "port:", process.env.SMTP_PORT, "user:", process.env.SMTP_USER, "from:", process.env.SMTP_FROM);
     return false;
   }
 }
