@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { query, queryOne, execute } from "../db/mysql";
 import { requireAuth } from "../auth";
+import { requireMemberSlot } from "../planGuard";
 import { sendInviteEmail } from "../email";
 import crypto from "crypto";
 
@@ -20,7 +21,7 @@ router.get("/pending-invites", requireAuth, wrap(async (req, res) => {
   res.json(invites);
 }));
 
-router.post("/invite", requireAuth, wrap(async (req, res) => {
+router.post("/invite", requireAuth, requireMemberSlot, wrap(async (req, res) => {
   const userId = (req as any).userId;
   const { email } = req.body;
   const trip = await queryOne("SELECT * FROM trips WHERE id = ?", [req.params.tripId]) as any;

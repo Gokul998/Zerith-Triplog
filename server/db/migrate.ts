@@ -167,6 +167,25 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_user (user_id)
 );
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id              VARCHAR(36) PRIMARY KEY,
+  user_id         VARCHAR(36) NOT NULL,
+  provider        VARCHAR(20) NOT NULL,
+  provider_sub_id VARCHAR(255) NULL,
+  provider_order_id VARCHAR(255) NULL,
+  status          ENUM('active','cancelled','expired','pending') NOT NULL DEFAULT 'pending',
+  plan            VARCHAR(20) NOT NULL DEFAULT 'pro',
+  amount          DECIMAL(10,2) NOT NULL,
+  currency        VARCHAR(10) NOT NULL,
+  interval_type   VARCHAR(20) NOT NULL DEFAULT 'monthly',
+  current_period_end DATETIME NULL,
+  created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user (user_id),
+  INDEX idx_provider_sub (provider_sub_id)
+);
 `;
 
 // ALTER statements to patch existing tables that were created with wrong columns
@@ -185,6 +204,10 @@ const PATCHES = [
   `ALTER TABLE expenses ADD COLUMN paid_by VARCHAR(36) NOT NULL DEFAULT '' AFTER trip_id`,
   `ALTER TABLE expenses ADD COLUMN split_among TEXT NOT NULL AFTER notes`,
   `UPDATE expenses SET split_among = '[]' WHERE split_among IS NULL OR split_among = ''`,
+  // users: add plan and trial columns
+  `ALTER TABLE users ADD COLUMN plan ENUM('free','trial','pro') NOT NULL DEFAULT 'free' AFTER avatar_color`,
+  `ALTER TABLE users ADD COLUMN trial_ends_at DATETIME NULL AFTER plan`,
+  // set new registrations to trial (14 days) — existing users stay free
 ];
 
 export async function runMigrations() {

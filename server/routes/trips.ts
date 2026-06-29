@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { query, queryOne, execute } from "../db/mysql";
 import { requireAuth } from "../auth";
+import { requireTripSlot } from "../planGuard";
 import crypto from "crypto";
 
 const router = Router();
@@ -23,7 +24,7 @@ router.get("/", requireAuth, async (req, res) => {
   res.json(await getTripsForUser(userId));
 });
 
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, requireTripSlot, async (req, res) => {
   const userId = (req as any).userId;
   const { title, destination, start_date, end_date, status = "planning", notes = "", currency = "USD", budget_amount } = req.body;
   const id = crypto.randomUUID();

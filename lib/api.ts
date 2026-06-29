@@ -21,6 +21,13 @@ export function clearAuth() {
   localStorage.removeItem("tl_user");
 }
 
+export class UpgradeRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "UpgradeRequiredError";
+  }
+}
+
 export async function api<T = any>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
@@ -28,10 +35,13 @@ export async function api<T = any>(path: string, init?: RequestInit): Promise<T>
     headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init?.headers },
   });
   if (res.status === 401) {
-    // Stale / invalid token — clear session and redirect to login
     clearAuth();
     if (typeof window !== "undefined") window.location.href = "/dashboard";
     throw new Error("Session expired. Please sign in again.");
+  }
+  if (res.status === 402) {
+    const err = await res.json().catch(() => ({ message: "Upgrade required" }));
+    throw new UpgradeRequiredError(err.message || "Upgrade to Pro to use this feature.");
   }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));

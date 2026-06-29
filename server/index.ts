@@ -41,6 +41,7 @@ import receiptScannerRoutes from "./routes/receipt-scanner";
 import visaRoutes from "./routes/visa";
 import briefRoutes from "./routes/brief";
 import googleAuthRoutes from "./routes/google-auth";
+import billingRoutes from "./routes/billing";
 
 const app = express();
 const httpServer = createServer(app);
@@ -53,6 +54,7 @@ app.get("/api/health", (_, res) => res.json({ status: "ok", ts: Date.now() }));
 
 app.use("/api/auth/google", googleAuthRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/billing", billingRoutes);
 app.use("/api/trips", tripRoutes);
 // Top-level invite lookup (no tripId needed — token contains trip reference)
 app.get("/api/trips/x/members/invite/:token", async (req, res) => {

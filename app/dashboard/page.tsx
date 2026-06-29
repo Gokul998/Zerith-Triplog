@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Plane, LogOut, MapPin, Calendar, Wallet, Sparkles } from "lucide-react";
+import { Plus, Plane, LogOut, MapPin, Calendar, Wallet, Sparkles, Crown } from "lucide-react";
 import { motion } from "framer-motion";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { TripStats } from "@/components/TripStats";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPost, UpgradeRequiredError } from "@/lib/api";
+import { UpgradeModal } from "@/components/UpgradeModal";
 import { useRouter } from "next/navigation";
 import { getMoodClass, getMoodLabel, getMoodEmoji, getDestinationCode } from "@/lib/destination";
 
@@ -296,9 +297,12 @@ function Dashboard() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeMsg, setUpgradeMsg] = useState("");
   const [form, setForm] = useState({ title: "", destination: "", start_date: "", end_date: "", notes: "", budget_amount: "", currency: detectCurrency() });
   const [saving, setSaving] = useState(false);
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
+  const userPlan: string = (user as any)?.plan ?? "free";
 
   const load = useCallback(() => {
     apiGet<Trip[]>("/api/trips").then(t => { setTrips(t); setLoading(false); });
@@ -311,7 +315,10 @@ function Dashboard() {
       await apiPost("/api/trips", { ...form, budget_amount: form.budget_amount ? parseFloat(form.budget_amount) : null });
       load(); setShowCreate(false);
       setForm({ title: "", destination: "", start_date: "", end_date: "", notes: "", budget_amount: "", currency: detectCurrency() });
-    } catch (err: any) { alert(err.message); }
+    } catch (err: any) {
+      if (err instanceof UpgradeRequiredError) { setUpgradeMsg(err.message); setShowUpgrade(true); setShowCreate(false); }
+      else alert(err.message);
+    }
     finally { setSaving(false); }
   }
 
@@ -332,6 +339,17 @@ function Dashboard() {
           </div>
           <div className="flex items-center gap-2">
             <NotificationBell />
+            {userPlan !== "pro" && (
+              <button onClick={() => router.push("/pricing")} className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold hover:from-amber-500/30 transition-all">
+                <Crown size={12} />
+                {userPlan === "trial" ? "Trial" : "Upgrade"}
+              </button>
+            )}
+            {userPlan === "pro" && (
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold">
+                <Crown size={12} />Pro
+              </div>
+            )}
             <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: user?.avatar_color }}>{user?.name?.[0]}</div>
               <span className="text-sm text-white/60 hidden sm:block">{user?.name?.split(" ")[0]}</span>
@@ -447,6 +465,7 @@ function Dashboard() {
           </div>
         </form>
       </Modal>
+      <UpgradeModal open={showUpgrade} onClose={() => setShowUpgrade(false)} message={upgradeMsg} />
     </div>
   );
 }

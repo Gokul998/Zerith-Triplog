@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { queryOne, execute } from "../db/mysql";
 import { requireAuth } from "../auth";
+import { requireDriveAccess } from "../planGuard";
 
 const router = Router({ mergeParams: true });
 
@@ -83,7 +84,7 @@ router.post("/create-folder", requireAuth, async (req, res, next) => {
   } catch (err: any) { next(err); }
 });
 
-router.post("/upload/:memoryId", requireAuth, async (req, res, next) => {
+router.post("/upload/:memoryId", requireAuth, requireDriveAccess, async (req, res, next) => {
   try {
     const userId = (req as any).userId;
     const user = await queryOne("SELECT google_tokens FROM users WHERE id = ?", [userId]) as any;

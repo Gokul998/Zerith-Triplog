@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { requireAuth } from "../auth";
+import { requirePro } from "../planGuard";
 
 const router = Router({ mergeParams: true });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -74,7 +75,7 @@ async function scanWithGemini(base64Image: string, mimeType: string): Promise<st
   throw lastErr || new Error("Gemini scan failed");
 }
 
-router.post("/scan", requireAuth, upload.single("image"), async (req, res) => {
+router.post("/scan", requireAuth, requirePro, upload.single("image"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No image uploaded" });
   const base64Image = req.file.buffer.toString("base64");
   const mimeType = req.file.mimetype || "image/jpeg";

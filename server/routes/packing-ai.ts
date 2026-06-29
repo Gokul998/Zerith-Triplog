@@ -2,10 +2,11 @@ import { Router } from "express";
 import { queryOne } from "../db/mysql";
 import { callGeminiJSON } from "../gemini";
 import { requireAuth } from "../auth";
+import { requirePro } from "../planGuard";
 
 const router = Router({ mergeParams: true });
 
-router.post("/suggest", requireAuth, async (req, res, next) => {
+router.post("/suggest", requireAuth, requirePro, async (req, res, next) => {
   try {
     const { tripId } = req.params as { tripId: string };
     const trip = await queryOne("SELECT * FROM trips WHERE id = ?", [tripId]) as any;
