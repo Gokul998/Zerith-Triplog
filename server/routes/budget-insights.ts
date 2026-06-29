@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { queryOne, query } from "../db/mysql";
 import { requireAuth } from "../auth";
-import { requirePro } from "../planGuard";
+import { requireBasic } from "../planGuard";
 import { callGemini } from "../gemini";
 
 const router = Router({ mergeParams: true });
 
-router.post("/insights", requireAuth, requirePro, async (req, res, next) => {
+router.post("/insights", requireAuth, requireBasic, async (req, res, next) => {
   const { tripId } = req.params;
   try {
     const trip = await queryOne("SELECT * FROM trips WHERE id = ?", [tripId]) as any;

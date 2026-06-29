@@ -205,9 +205,10 @@ const PATCHES = [
   `ALTER TABLE expenses ADD COLUMN split_among TEXT NOT NULL AFTER notes`,
   `UPDATE expenses SET split_among = '[]' WHERE split_among IS NULL OR split_among = ''`,
   // users: add plan and trial columns
-  `ALTER TABLE users ADD COLUMN plan ENUM('free','trial','pro') NOT NULL DEFAULT 'free' AFTER avatar_color`,
+  `ALTER TABLE users ADD COLUMN plan ENUM('free','trial','basic','pro') NOT NULL DEFAULT 'free' AFTER avatar_color`,
   `ALTER TABLE users ADD COLUMN trial_ends_at DATETIME NULL AFTER plan`,
-  // set new registrations to trial (14 days) — existing users stay free
+  // expand plan enum if column already exists (ignore error if already up to date)
+  `ALTER TABLE users MODIFY COLUMN plan ENUM('free','trial','basic','pro') NOT NULL DEFAULT 'free'`,
 ];
 
 export async function runMigrations() {
